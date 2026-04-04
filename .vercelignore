@@ -1,0 +1,7 @@
+# Tell Vercel to ignore Node.js files so it doesn't auto-run npm install + vite build
+package.json
+package-lock.json
+node_modules/
+vite.config.js
+resources/js/
+resources/css/
