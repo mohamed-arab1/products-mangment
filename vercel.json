@@ -1,16 +1,19 @@
 {
     "version": 2,
     "framework": null,
-    "outputDirectory": "public",
-    "functions": {
-        "handler.php": {
-            "runtime": "vercel-php@0.7.2"
+    "builds": [
+        {
+            "src": "vercel.php",
+            "use": "vercel-php@0.7.2",
+            "config": {
+                "maxLambdaSize": "15mb"
+            }
         }
-    },
+    ],
     "routes": [
         {
             "src": "/(.*)",
-            "dest": "/handler.php"
+            "dest": "/vercel.php"
         }
     ],
     "env": {
