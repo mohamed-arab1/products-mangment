@@ -9,6 +9,22 @@
 
 define('LARAVEL_START', microtime(true));
 
+// On Vercel, ensure HTTP_HOST is set so Laravel can build correct URLs.
+if (empty($_SERVER['HTTP_HOST'])) {
+    $appUrl = $_ENV['APP_URL'] ?? $_SERVER['APP_URL'] ?? '';
+    if ($appUrl) {
+        $parsed = parse_url($appUrl);
+        $_SERVER['HTTP_HOST']   = $parsed['host'] ?? 'localhost';
+        $_SERVER['HTTPS']       = ($parsed['scheme'] ?? 'https') === 'https' ? 'on' : 'off';
+        $_SERVER['SERVER_PORT'] = ($parsed['scheme'] ?? 'https') === 'https' ? 443 : 80;
+    }
+}
+
+// Ensure REQUEST_URI is set (Vercel may provide PATH_INFO instead).
+if (empty($_SERVER['REQUEST_URI'])) {
+    $_SERVER['REQUEST_URI'] = $_SERVER['PATH_INFO'] ?? '/';
+}
+
 // Determine if the application is in maintenance mode...
 if (file_exists($maintenance = __DIR__ . '/storage/framework/maintenance.php')) {
     require $maintenance;
