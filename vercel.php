@@ -9,7 +9,15 @@
 
 define('LARAVEL_START', microtime(true));
 
-// On Vercel, ensure HTTP_HOST is set so Laravel can build correct URLs.
+// On Vercel, SCRIPT_NAME is set to the request URI (e.g. /api/register).
+// Symfony's Request uses SCRIPT_NAME to strip a "base path" from REQUEST_URI,
+// which causes Laravel to only see "register" instead of "/api/register".
+// Fix: force SCRIPT_NAME to the actual entry file so nothing gets stripped.
+$_SERVER['SCRIPT_NAME']     = '/vercel.php';
+$_SERVER['SCRIPT_FILENAME'] = __FILE__;
+$_SERVER['PHP_SELF']        = '/vercel.php';
+
+// Ensure HTTP_HOST is set so Laravel can build correct URLs.
 if (empty($_SERVER['HTTP_HOST'])) {
     $appUrl = $_ENV['APP_URL'] ?? $_SERVER['APP_URL'] ?? '';
     if ($appUrl) {
@@ -37,3 +45,4 @@ require __DIR__ . '/vendor/autoload.php';
 $app = require_once __DIR__ . '/bootstrap/app.php';
 
 $app->handleRequest(Illuminate\Http\Request::capture());
+
