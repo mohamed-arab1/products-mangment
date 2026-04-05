@@ -3,14 +3,14 @@
     "framework": null,
     "outputDirectory": "public",
     "functions": {
-        "api/index.php": {
+        "handler.php": {
             "runtime": "vercel-php@0.7.2"
         }
     },
     "routes": [
         {
             "src": "/(.*)",
-            "dest": "/api/index.php"
+            "dest": "/handler.php"
         }
     ],
     "env": {
