@@ -21,6 +21,7 @@
         "CACHE_STORE": "array",
         "SESSION_DRIVER": "array",
         "QUEUE_CONNECTION": "sync",
-        "FILESYSTEM_DISK": "local"
+        "FILESYSTEM_DISK": "local",
+        "VERCEL": "1"
     }
 }

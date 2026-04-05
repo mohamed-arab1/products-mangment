@@ -17,5 +17,14 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Always return JSON — this is a pure API, no Blade views needed.
+        $exceptions->render(function (\Throwable $e, \Illuminate\Http\Request $request) {
+            $status = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
+
+            return response()->json([
+                'error'   => true,
+                'message' => $e->getMessage() ?: 'Server Error',
+                'code'    => $status,
+            ], $status);
+        });
     })->create();
