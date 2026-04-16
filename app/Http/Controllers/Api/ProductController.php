@@ -496,11 +496,13 @@ class ProductController extends Controller
             'default_price' => ['nullable', 'numeric', 'min:0'],
             'purchase_price' => ['nullable', 'numeric', 'min:0'],
             'stock_quantity' => ['nullable', 'integer', 'min:0'],
+            'low_stock_threshold' => ['nullable', 'integer', 'min:0'],
             'production_date' => ['nullable', 'date'],
             'shelf_life_days' => ['nullable', 'integer', 'min:1', 'max:36500'],
             'shelf_life_value' => ['nullable', 'integer', 'min:1', 'max:99999'],
             'shelf_life_unit' => ['nullable', 'string', Rule::in(['days', 'months', 'years'])],
             'expiry_date' => ['nullable', 'date'],
+            'expiry_alert_days' => ['nullable', 'integer', 'min:1', 'max:3650'],
         ]);
         $this->normalizeShelfLifeFields($validated);
         $product = Product::create($validated);
@@ -577,11 +579,13 @@ class ProductController extends Controller
             'default_price' => ['nullable', 'numeric', 'min:0'],
             'purchase_price' => ['nullable', 'numeric', 'min:0'],
             'stock_quantity' => ['nullable', 'integer', 'min:0'],
+            'low_stock_threshold' => ['nullable', 'integer', 'min:0'],
             'production_date' => ['nullable', 'date'],
             'shelf_life_days' => ['nullable', 'integer', 'min:1', 'max:36500'],
             'shelf_life_value' => ['nullable', 'integer', 'min:1', 'max:99999'],
             'shelf_life_unit' => ['nullable', 'string', Rule::in(['days', 'months', 'years'])],
             'expiry_date' => ['nullable', 'date'],
+            'expiry_alert_days' => ['nullable', 'integer', 'min:1', 'max:3650'],
         ]);
         $this->normalizeShelfLifeFields($validated);
         if ($product->batches()->exists()) {

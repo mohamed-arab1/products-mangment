@@ -3,12 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\AppNotification;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Payment;
 use App\Models\Product;
-use App\Models\Target;
+use App\Services\InventoryNotificationService;
+use App\Services\PaymentNotificationService;
+use App\Services\SalesLimitNotificationService;
 use App\Support\ProductBatchStockService;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
@@ -174,8 +175,13 @@ class InvoiceController extends Controller
             return $e->getResponse();
         }
 
-        $this->checkTargetAndNotify($invoice);
-        $this->checkLowStockAndNotify($invoice);
+        app(SalesLimitNotificationService::class)->onInvoiceRecorded($invoice);
+        foreach ($invoice->items()->with('product')->get() as $item) {
+            if ($item->product) {
+                app(InventoryNotificationService::class)
+                    ->onProductStockChanged($item->product, (int) $invoice->seller_id);
+            }
+        }
 
         return response()->json($invoice->load(['items', 'payments']), 201);
     }
@@ -336,6 +342,7 @@ class InvoiceController extends Controller
             $inv->update([
                 'payment_status' => $newPaidTotal + 0.005 >= $invoiceTotal ? 'paid' : 'partial',
             ]);
+            app(PaymentNotificationService::class)->onPaymentRecorded($inv->fresh('payments'), $payment);
 
             return response()->json([
                 'message' => 'تم تسجيل الدفعة بنجاح',
@@ -383,30 +390,6 @@ class InvoiceController extends Controller
         );
     }
 
-    private function checkTargetAndNotify(Invoice $invoice): void
-    {
-        $sellerId = $invoice->seller_id;
-        $saleDate = Carbon::parse($invoice->sale_date);
-
-        $dailyTarget = Target::where('user_id', $sellerId)
-            ->where('period_type', 'daily')
-            ->whereDate('period_start', $saleDate)
-            ->first();
-
-        if ($dailyTarget) {
-            $dailyTotal = Invoice::where('seller_id', $sellerId)->whereDate('sale_date', $saleDate)->sum('total');
-            if ($dailyTotal >= $dailyTarget->target_amount) {
-                AppNotification::create([
-                    'user_id' => $sellerId,
-                    'type' => 'target_exceeded',
-                    'title' => 'تم تحقيق الهدف اليومي',
-                    'message' => "تهانينا! تم تحقيق الهدف اليومي ({$dailyTarget->target_amount})",
-                    'data' => ['target_id' => $dailyTarget->id, 'total' => $dailyTotal],
-                ]);
-            }
-        }
-    }
-
     private function getAvailableLoyaltyPoints(int $sellerId, ?string $buyerName, ?string $buyerPhone): int
     {
         if (! $buyerName && ! $buyerPhone) {
@@ -424,23 +407,4 @@ class InvoiceController extends Controller
         return max($earned - $redeemed, 0);
     }
 
-    private function checkLowStockAndNotify(Invoice $invoice): void
-    {
-        $threshold = 5;
-        foreach ($invoice->items()->with('product')->get() as $item) {
-            $product = $item->product?->fresh();
-            if (! $product || $product->stock_quantity === null) {
-                continue;
-            }
-            if ((int) $product->stock_quantity <= $threshold) {
-                AppNotification::create([
-                    'user_id' => $invoice->seller_id,
-                    'type' => 'low_stock',
-                    'title' => 'تنبيه مخزون منخفض',
-                    'message' => "المنتج {$product->name} اقترب من النفاد (المتبقي: {$product->stock_quantity})",
-                    'data' => ['product_id' => $product->id, 'stock_quantity' => $product->stock_quantity],
-                ]);
-            }
-        }
-    }
 }

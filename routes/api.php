@@ -67,7 +67,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('targets', TargetController::class)->only(['index', 'store', 'update', 'destroy']);
 
     // Notifications
+    Route::get('/notifications/count', [NotificationController::class, 'count']);
     Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/{notification}/mark', [NotificationController::class, 'mark']);
+    Route::post('/notifications/mark-all', [NotificationController::class, 'markAll']);
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
 
     // Admin only

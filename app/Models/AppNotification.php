@@ -15,8 +15,10 @@ class AppNotification extends Model
     protected $fillable = [
         'user_id',
         'type',
+        'dedupe_key',
         'title',
         'message',
+        'channel',
         'data',
         'read_at',
     ];

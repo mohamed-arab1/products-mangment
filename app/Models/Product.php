@@ -18,11 +18,13 @@ class Product extends Model
         'default_price',
         'purchase_price',
         'stock_quantity',
+        'low_stock_threshold',
         'production_date',
         'shelf_life_days',
         'shelf_life_value',
         'shelf_life_unit',
         'expiry_date',
+        'expiry_alert_days',
     ];
 
     protected function casts(): array
@@ -34,6 +36,8 @@ class Product extends Model
             'expiry_date' => 'date',
             'shelf_life_days' => 'integer',
             'shelf_life_value' => 'integer',
+            'low_stock_threshold' => 'integer',
+            'expiry_alert_days' => 'integer',
         ];
     }
 
