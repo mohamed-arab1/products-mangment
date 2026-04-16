@@ -20,11 +20,14 @@ class RunSmartNotifications extends Command
     ): int {
         $dueSoonDays = max(1, (int) $this->option('due-soon-days'));
 
+        $expiry6MonthsCount = $inventoryNotificationService->runExactSixMonthsExpiryScan();
         $expiryCount = $inventoryNotificationService->runNearExpiryScan();
         $dueCount = $paymentNotificationService->runDueDateScan($dueSoonDays);
         $endPeriodCount = $salesLimitNotificationService->runEndOfPeriodUnderperformingScan();
 
-        $this->info("Smart notifications completed. expiry={$expiryCount}, due={$dueCount}, end_period={$endPeriodCount}");
+        $this->info(
+            "Smart notifications completed. expiry_6_months={$expiry6MonthsCount}, expiry={$expiryCount}, due={$dueCount}, end_period={$endPeriodCount}"
+        );
 
         return self::SUCCESS;
     }

@@ -94,4 +94,51 @@ class InventoryNotificationService
 
         return $count;
     }
+
+    /**
+     * Notify exactly when a product has 6 months remaining to expiry.
+     */
+    public function runExactSixMonthsExpiryScan(?Carbon $today = null): int
+    {
+        $today ??= Carbon::today();
+        $users = User::query()->pluck('id');
+        $count = 0;
+
+        $batches = ProductBatch::query()
+            ->where('quantity', '>', 0)
+            ->whereNotNull('expiry_date')
+            ->with('product')
+            ->get();
+
+        foreach ($batches as $batch) {
+            $product = $batch->product;
+            if (! $product || ! $batch->expiry_date) {
+                continue;
+            }
+
+            $expiry = Carbon::parse($batch->expiry_date)->startOfDay();
+            if (! $today->copy()->addMonthsNoOverflow(6)->isSameDay($expiry)) {
+                continue;
+            }
+
+            foreach ($users as $userId) {
+                $this->notifications->notify(
+                    (int) $userId,
+                    'inventory_expiry_6_months',
+                    'تنبيه صلاحية: متبقي 6 أشهر',
+                    "المنتج {$product->name} متبقي له 6 أشهر على انتهاء الصلاحية.",
+                    [
+                        'product_id' => $product->id,
+                        'batch_id' => $batch->id,
+                        'expiry_date' => $expiry->toDateString(),
+                        'remaining' => '6 months left',
+                    ],
+                    "expiry_6_months:batch:{$batch->id}:expiry:".$expiry->toDateString()
+                );
+                $count++;
+            }
+        }
+
+        return $count;
+    }
 }

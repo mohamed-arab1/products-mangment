@@ -28,7 +28,7 @@ class TargetController extends Controller
         $validated = $request->validate([
             'user_id' => ['nullable', 'exists:users,id'],
             'target_amount' => ['required', 'numeric', 'min:0'],
-            'period_type' => ['required', 'in:daily,weekly,monthly'],
+            'period_type' => ['required', 'in:daily,weekly,monthly,yearly'],
             'period_start' => ['required', 'date'],
         ]);
         if ($user->isSeller()) {
@@ -46,7 +46,7 @@ class TargetController extends Controller
         }
         $validated = $request->validate([
             'target_amount' => ['sometimes', 'numeric', 'min:0'],
-            'period_type' => ['sometimes', 'in:daily,weekly,monthly'],
+            'period_type' => ['sometimes', 'in:daily,weekly,monthly,yearly'],
             'period_start' => ['sometimes', 'date'],
         ]);
         $target->update($validated);

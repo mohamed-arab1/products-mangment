@@ -65,6 +65,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Targets
     Route::apiResource('targets', TargetController::class)->only(['index', 'store', 'update', 'destroy']);
+    Route::get('/sales-limits', [TargetController::class, 'index']);
+    Route::post('/sales-limits', [TargetController::class, 'store']);
+    Route::put('/sales-limits/{target}', [TargetController::class, 'update']);
+    Route::delete('/sales-limits/{target}', [TargetController::class, 'destroy']);
 
     // Notifications
     Route::get('/notifications/count', [NotificationController::class, 'count']);

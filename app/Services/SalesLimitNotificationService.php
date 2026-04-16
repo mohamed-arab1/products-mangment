@@ -14,7 +14,7 @@ class SalesLimitNotificationService
     public function onInvoiceRecorded(Invoice $invoice): void
     {
         $saleDate = Carbon::parse($invoice->sale_date);
-        foreach (['daily', 'weekly', 'monthly'] as $periodType) {
+        foreach (['daily', 'weekly', 'monthly', 'yearly'] as $periodType) {
             $target = $this->targetForSeller($invoice->seller_id, $periodType, $saleDate);
             if (! $target) {
                 continue;
@@ -30,7 +30,7 @@ class SalesLimitNotificationService
         $count = 0;
 
         foreach (User::query()->pluck('id') as $userId) {
-            foreach (['daily', 'weekly', 'monthly'] as $periodType) {
+            foreach (['daily', 'weekly', 'monthly', 'yearly'] as $periodType) {
                 $previousPeriodDate = $this->previousPeriodEndDate($periodType, $today);
                 $target = $this->targetForSeller((int) $userId, $periodType, $previousPeriodDate);
                 if (! $target) {
@@ -147,7 +147,8 @@ class SalesLimitNotificationService
         return match ($periodType) {
             'daily' => $today->copy()->subDay()->endOfDay(),
             'weekly' => $today->copy()->subWeek()->endOfWeek(Carbon::SATURDAY),
-            default => $today->copy()->subMonth()->endOfMonth(),
+            'monthly' => $today->copy()->subMonth()->endOfMonth(),
+            default => $today->copy()->subYear()->endOfYear(),
         };
     }
 
@@ -162,7 +163,8 @@ class SalesLimitNotificationService
                 $anchorDate->copy()->startOfWeek(Carbon::SUNDAY),
                 $anchorDate->copy()->endOfWeek(Carbon::SATURDAY),
             ],
-            default => [$anchorDate->copy()->startOfMonth(), $anchorDate->copy()->endOfMonth()],
+            'monthly' => [$anchorDate->copy()->startOfMonth(), $anchorDate->copy()->endOfMonth()],
+            default => [$anchorDate->copy()->startOfYear(), $anchorDate->copy()->endOfYear()],
         };
     }
 }

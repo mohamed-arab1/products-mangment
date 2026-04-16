@@ -8,4 +8,4 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::command('notifications:smart-run --due-soon-days=5')->everyThirtyMinutes();
+Schedule::command('notifications:smart-run --due-soon-days=5')->dailyAt('08:00');
