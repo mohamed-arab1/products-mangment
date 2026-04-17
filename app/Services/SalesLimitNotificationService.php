@@ -127,7 +127,9 @@ class SalesLimitNotificationService
         [$periodStart] = $this->resolvePeriodRange($periodType, $anchorDate);
 
         return Target::query()
-            ->where('user_id', $sellerId)
+            ->where(function ($q) use ($sellerId) {
+                $q->where('user_id', $sellerId)->orWhere('seller_id', $sellerId);
+            })
             ->where('period_type', $periodType)
             ->whereDate('period_start', $periodStart->toDateString())
             ->first();

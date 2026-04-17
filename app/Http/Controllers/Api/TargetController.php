@@ -13,9 +13,15 @@ class TargetController extends Controller
     {
         $query = Target::query();
         if ($request->user()->isSeller()) {
-            $query->where('user_id', $request->user()->id);
-        } elseif ($request->has('user_id')) {
-            $query->where('user_id', $request->user_id);
+            $id = (int) $request->user()->id;
+            $query->where(function ($q) use ($id) {
+                $q->where('user_id', $id)->orWhere('seller_id', $id);
+            });
+        } elseif ($request->filled('user_id') || $request->filled('seller_id')) {
+            $id = (int) ($request->input('user_id') ?? $request->input('seller_id'));
+            $query->where(function ($q) use ($id) {
+                $q->where('user_id', $id)->orWhere('seller_id', $id);
+            });
         }
         $targets = $query->orderByDesc('period_start')->get();
 
@@ -27,13 +33,26 @@ class TargetController extends Controller
         $user = $request->user();
         $validated = $request->validate([
             'user_id' => ['nullable', 'exists:users,id'],
+            'seller_id' => ['nullable', 'exists:users,id'],
             'target_amount' => ['required', 'numeric', 'min:0'],
             'period_type' => ['required', 'in:daily,weekly,monthly,yearly'],
             'period_start' => ['required', 'date'],
         ]);
         if ($user->isSeller()) {
             $validated['user_id'] = $user->id;
+        } else {
+            $ownerId = $validated['user_id'] ?? $validated['seller_id'] ?? null;
+            if ($ownerId === null) {
+                return response()->json([
+                    'message' => 'يجب تحديد المستخدم (user_id أو seller_id).',
+                    'errors' => [
+                        'user_id' => ['مطلوب للمسؤول عند إنشاء حد بيع لمستخدم آخر.'],
+                    ],
+                ], 422);
+            }
+            $validated['user_id'] = (int) $ownerId;
         }
+        unset($validated['seller_id']);
         $target = Target::create($validated);
 
         return response()->json($target, 201);
@@ -41,7 +60,7 @@ class TargetController extends Controller
 
     public function update(Request $request, Target $target): JsonResponse
     {
-        if ($request->user()->isSeller() && $target->user_id !== $request->user()->id) {
+        if ($request->user()->isSeller() && $target->ownerUserId() !== $request->user()->id) {
             return response()->json(['message' => 'غير مصرح'], 403);
         }
         $validated = $request->validate([
@@ -56,7 +75,7 @@ class TargetController extends Controller
 
     public function destroy(Request $request, Target $target): JsonResponse
     {
-        if ($request->user()->isSeller() && $target->user_id !== $request->user()->id) {
+        if ($request->user()->isSeller() && $target->ownerUserId() !== $request->user()->id) {
             return response()->json(['message' => 'غير مصرح'], 403);
         }
         $target->delete();

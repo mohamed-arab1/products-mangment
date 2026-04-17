@@ -7,6 +7,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Payment;
 use App\Models\Product;
+use App\Models\User;
 use App\Support\InvoiceStatusBuckets;
 use DateTimeInterface;
 use Illuminate\Http\JsonResponse;
@@ -226,7 +227,7 @@ class ReportController extends Controller
      */
     public function creditDues(Request $request): JsonResponse
     {
-        $query = Invoice::query()->with('seller:id,name');
+        $query = Invoice::query()->with('seller:id,name,role');
         if ($request->user()->isSeller()) {
             $query->where('seller_id', $request->user()->id);
         }
@@ -266,6 +267,7 @@ class ReportController extends Controller
         $data = $withBalance->map(function (Invoice $invoice) use ($paidSums) {
             $paid = round((float) ($paidSums[$invoice->id] ?? 0), 2);
             $total = round((float) $invoice->total, 2);
+            $seller = $invoice->seller;
 
             return [
                 'id' => $invoice->id,
@@ -278,6 +280,11 @@ class ReportController extends Controller
                 'paid_amount' => $paid,
                 'remaining_amount' => round(max($total - $paid, 0), 2),
                 'payment_status' => $invoice->payment_status,
+                'seller' => $seller ? [
+                    'id' => $seller->id,
+                    'name' => $seller->name,
+                    'role' => $seller->role,
+                ] : null,
             ];
         });
 
