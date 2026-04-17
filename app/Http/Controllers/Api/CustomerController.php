@@ -23,7 +23,8 @@ class CustomerController extends Controller
             ->where('buyer_name', '!=', '')
             ->select(['buyer_name', 'buyer_phone', 'buyer_address', 'total', 'sale_date', 'seller_id']);
 
-        if ($request->user()->isSeller()) {
+        // Same customer book for admin and seller (parity with admin response / `sellers` per group).
+        if ($request->boolean('mine') && $request->user()->isSeller()) {
             $query->where('seller_id', $request->user()->id);
         }
 
