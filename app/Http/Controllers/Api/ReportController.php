@@ -228,7 +228,8 @@ class ReportController extends Controller
     public function creditDues(Request $request): JsonResponse
     {
         $query = Invoice::query()->with('seller:id,name,role');
-        if ($request->user()->isSeller()) {
+        // Same credit book for admin and seller; use ?mine=1 to limit to the authenticated seller’s invoices.
+        if ($request->boolean('mine') && $request->user()->isSeller()) {
             $query->where('seller_id', $request->user()->id);
         }
         $allInvoices = $query->get();
