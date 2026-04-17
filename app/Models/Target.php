@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
 
 class Target extends Model
@@ -31,10 +32,12 @@ class Target extends Model
     {
         static::creating(function (Target $target): void {
             self::syncOwnerColumns($target);
+            self::syncLegacyTargetsColumns($target);
         });
 
         static::updating(function (Target $target): void {
             self::syncOwnerColumns($target);
+            self::syncLegacyTargetsColumns($target);
         });
     }
 
@@ -63,6 +66,34 @@ class Target extends Model
         }
         if (! $hasSeller) {
             unset($target->attributes['seller_id']);
+        }
+    }
+
+    /**
+     * Supabase legacy `targets` (see supabase_schema.sql) may require month, year, achieved_amount.
+     */
+    private static function syncLegacyTargetsColumns(Target $target): void
+    {
+        $table = $target->getTable();
+
+        if (Schema::hasColumn($table, 'achieved_amount')) {
+            $v = $target->getAttribute('achieved_amount');
+            if ($v === null) {
+                $target->setAttribute('achieved_amount', 0);
+            }
+        } else {
+            unset($target->attributes['achieved_amount']);
+        }
+
+        if (Schema::hasColumn($table, 'month') && Schema::hasColumn($table, 'year')) {
+            $start = $target->period_start ?? $target->getAttribute('period_start');
+            if ($start !== null) {
+                $d = Carbon::parse($start)->startOfDay();
+                $target->setAttribute('month', (int) $d->month);
+                $target->setAttribute('year', (int) $d->year);
+            }
+        } else {
+            unset($target->attributes['month'], $target->attributes['year']);
         }
     }
 
